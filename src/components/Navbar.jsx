@@ -36,6 +36,14 @@ function Navbar() {
               <span className="navbar__badge">{inscriptions.length}</span>
             )}
           </NavLink>
+          <NavLink
+            to="/api-docs"
+            className={({ isActive }) =>
+              `navbar__link ${isActive ? 'navbar__link--active' : ''}`
+            }
+          >
+            API Docs
+          </NavLink>
         </nav>
 
         {/* Sección de estudiante */}

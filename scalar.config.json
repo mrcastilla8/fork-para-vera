@@ -1,0 +1,22 @@
+{
+  "$schema": "https://registry.scalar.com/@scalar/schemas/config",
+  "scalar": "2.0.0",
+  "info": {
+    "title": "EventosFISI API Docs",
+    "description": "Documentación oficial y referencia de API para la plataforma de Eventos Académicos EventosFISI."
+  },
+  "navigation": {
+    "routes": {
+      "/": {
+        "title": "Introducción",
+        "type": "page",
+        "filepath": "docs/introduction.md"
+      },
+      "/api-reference": {
+        "title": "Referencia de API",
+        "type": "openapi",
+        "filepath": "public/openapi.yaml"
+      }
+    }
+  }
+}

@@ -1,0 +1,364 @@
+openapi: 3.1.0
+info:
+  title: EventosFISI API
+  version: 1.0.0
+  description: |
+    API REST para la plataforma **EventosFISI — Eventos Académicos**.
+    Contrato modelado a partir de las entidades y flujos del frontend (`mockData.js`, `useEventFilter.js`, `AppContext.jsx`).
+servers:
+  - url: /api
+    description: Servidor mock integrado en Vite (mismo origen, sin CORS)
+  - url: http://localhost:5173/api
+    description: Servidor mock local de Vite (para Scalar CLI preview)
+tags:
+  - name: Eventos
+    description: Consulta y filtrado de eventos académicos
+  - name: Categorías
+    description: Catálogo de categorías disponibles
+  - name: Inscripciones
+    description: Registro y cancelación de inscripciones de estudiantes
+
+paths:
+  /events:
+    get:
+      tags:
+        - Eventos
+      summary: Listar eventos académicos
+      description: Obtiene la lista de eventos con soporte para los filtros de `useEventFilter.js`.
+      operationId: listEvents
+      parameters:
+        - name: search
+          in: query
+          description: Búsqueda por título, expositor o categoría
+          required: false
+          schema:
+            type: string
+            example: Inteligencia Artificial
+        - name: category
+          in: query
+          description: Filtrar por categoría exacta
+          required: false
+          schema:
+            $ref: '#/components/schemas/Category'
+        - name: status
+          in: query
+          description: Filtrar por estado temporal respecto a la fecha actual
+          required: false
+          schema:
+            type: string
+            enum: [all, upcoming, past]
+            default: all
+        - name: cost
+          in: query
+          description: Filtrar por tipo de costo
+          required: false
+          schema:
+            type: string
+            enum: [all, free, paid]
+            default: all
+      responses:
+        '200':
+          description: Lista de eventos académicos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+              example:
+                - id: 1
+                  title: Introducción a la Inteligencia Artificial
+                  description: Explora los fundamentos de la IA y su impacto en la industria moderna.
+                  date: '2026-10-03'
+                  time: '10:00'
+                  speaker: Dr. Carlos Mendoza
+                  speakerBio: Doctor en Ciencias de la Computación, MIT. 15 años en investigación de IA.
+                  category: Tecnología
+                  isFree: true
+                  cost: 0
+                  capacity: 100
+                  enrolled: 98
+                  location: Auditorio Principal — Pabellón A
+                  agenda:
+                    - session: Sesión 1
+                      time: '10:00'
+                      topic: Bienvenida e introducción al campo de la IA
+
+  /events/{id}:
+    get:
+      tags:
+        - Eventos
+      summary: Obtener detalle de un evento
+      description: Devuelve la información completa y agenda por sesiones de un evento específico.
+      operationId: getEventById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único del evento
+          schema:
+            type: integer
+            example: 4
+      responses:
+        '200':
+          description: Detalle del evento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          description: Evento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Evento no encontrado
+
+  /categories:
+    get:
+      tags:
+        - Categorías
+      summary: Listar categorías de eventos
+      description: Devuelve las categorías académicas soportadas por la plataforma.
+      operationId: listCategories
+      responses:
+        '200':
+          description: Lista de categorías
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+              example:
+                - Tecnología
+                - Ciencias
+                - Negocios
+                - Humanidades
+                - Salud
+                - Arte y Cultura
+
+  /events/{id}/inscriptions:
+    post:
+      tags:
+        - Inscripciones
+      summary: Inscribir estudiante en un evento
+      description: Registra la inscripción de un estudiante en un evento próximo con cupos disponibles.
+      operationId: enrollInEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del evento
+          schema:
+            type: integer
+            example: 4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Student'
+      responses:
+        '201':
+          description: Inscripción registrada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InscriptionResponse'
+        '400':
+          description: Datos inválidos, evento pasado o sin cupos disponibles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Evento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Inscripciones
+      summary: Cancelar inscripción en un evento
+      description: Elimina la inscripción del estudiante en un evento próximo.
+      operationId: cancelEnrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del evento
+          schema:
+            type: integer
+            example: 4
+        - name: email
+          in: query
+          required: true
+          description: Correo institucional del estudiante
+          schema:
+            type: string
+            format: email
+            example: estudiante@unmsm.edu.pe
+      responses:
+        '200':
+          description: Inscripción cancelada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eventId:
+                    type: integer
+                    example: 4
+                  status:
+                    type: string
+                    example: cancelled
+        '404':
+          description: Inscripción o evento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Category:
+      type: string
+      enum:
+        - Tecnología
+        - Ciencias
+        - Negocios
+        - Humanidades
+        - Salud
+        - Arte y Cultura
+
+    AgendaItem:
+      type: object
+      required:
+        - session
+        - time
+        - topic
+      properties:
+        session:
+          type: string
+          example: Sesión 1
+        time:
+          type: string
+          example: '10:00'
+        topic:
+          type: string
+          example: Bienvenida e introducción al campo de la IA
+
+    Event:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - date
+        - time
+        - speaker
+        - speakerBio
+        - category
+        - isFree
+        - cost
+        - capacity
+        - enrolled
+        - location
+      properties:
+        id:
+          type: integer
+          example: 4
+        title:
+          type: string
+          example: 'Workshop: Desarrollo Web Fullstack'
+        description:
+          type: string
+        date:
+          type: string
+          format: date
+          example: '2026-10-17'
+        time:
+          type: string
+          example: '08:00'
+        speaker:
+          type: string
+          example: Ing. Roberto Silva
+        speakerBio:
+          type: string
+          example: Senior Full-Stack Engineer en Mercado Libre. Instructor certificado.
+        category:
+          $ref: '#/components/schemas/Category'
+        isFree:
+          type: boolean
+          example: false
+        cost:
+          type: number
+          format: float
+          example: 50
+        capacity:
+          type: integer
+          example: 30
+        enrolled:
+          type: integer
+          example: 22
+        location:
+          type: string
+          example: Lab de Cómputo 3 — Pabellón F
+        agenda:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/AgendaItem'
+
+    Student:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+      properties:
+        name:
+          type: string
+          minLength: 3
+          example: Ana Pérez
+        email:
+          type: string
+          format: email
+          description: Correo institucional (@unmsm.edu.pe o @universidad.edu.pe)
+          example: ana.perez@unmsm.edu.pe
+        phone:
+          type: string
+          pattern: '^[0-9]{7,15}$'
+          example: '987654321'
+
+    InscriptionResponse:
+      type: object
+      required:
+        - eventId
+        - studentEmail
+        - status
+      properties:
+        eventId:
+          type: integer
+          example: 4
+        studentEmail:
+          type: string
+          format: email
+          example: ana.perez@unmsm.edu.pe
+        status:
+          type: string
+          example: enrolled
+
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: No quedan cupos disponibles para este evento

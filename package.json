@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docs:preview": "npx @scalar/cli project preview",
+    "docs:publish": "npx @scalar/cli project publish"
   },
   "devDependencies": {
     "typescript": "~6.0.2",
     "vite": "^8.0.12"
   },
   "dependencies": {
+    "@scalar/api-reference-react": "^0.9.90",
     "@vitejs/plugin-react": "^6.0.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
