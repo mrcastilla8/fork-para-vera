@@ -17,6 +17,8 @@ tags:
     description: Catálogo de categorías disponibles
   - name: Inscripciones
     description: Registro y cancelación de inscripciones de estudiantes
+  - name: Valoraciones
+    description: CRUD de valoraciones y recomendaciones de eventos realizados
 
 paths:
   /events:
@@ -223,6 +225,209 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /events/{id}/reviews:
+    get:
+      tags:
+        - Valoraciones
+      summary: Listar valoraciones de un evento
+      description: Obtiene todas las valoraciones de un evento junto con su calificación promedio y porcentaje de recomendación.
+      operationId: listEventReviews
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del evento
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Resumen y lista de valoraciones del evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewListResponse'
+        '404':
+          description: Evento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Valoraciones
+      summary: Crear valoración y recomendación
+      description: Registra la valoración (1 a 5 estrellas), recomendación y comentario de un estudiante para un evento ya realizado.
+      operationId: createEventReview
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del evento
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequest'
+      responses:
+        '201':
+          description: Valoración creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          description: Datos inválidos o el evento aún no se ha realizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Evento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: El estudiante ya registró una valoración para este evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{id}/reviews/{reviewId}:
+    get:
+      tags:
+        - Valoraciones
+      summary: Obtener detalle de una valoración
+      description: Devuelve una valoración específica por su identificador.
+      operationId: getEventReviewById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del evento
+          schema:
+            type: integer
+            example: 1
+        - name: reviewId
+          in: path
+          required: true
+          description: ID de la valoración
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Valoración encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '404':
+          description: Evento o valoración no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Valoraciones
+      summary: Actualizar valoración existente
+      description: Actualiza la puntuación, recomendación y comentario de una valoración existente.
+      operationId: updateEventReview
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del evento
+          schema:
+            type: integer
+            example: 1
+        - name: reviewId
+          in: path
+          required: true
+          description: ID de la valoración
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewUpdateRequest'
+      responses:
+        '200':
+          description: Valoración actualizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          description: Datos de actualización inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Evento o valoración no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Valoraciones
+      summary: Eliminar una valoración
+      description: Elimina permanentemente una valoración registrada en un evento.
+      operationId: deleteEventReview
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del evento
+          schema:
+            type: integer
+            example: 1
+        - name: reviewId
+          in: path
+          required: true
+          description: ID de la valoración
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Valoración eliminada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eventId:
+                    type: integer
+                    example: 1
+                  reviewId:
+                    type: integer
+                    example: 1
+                  status:
+                    type: string
+                    example: deleted
+        '404':
+          description: Evento o valoración no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     Category:
@@ -362,3 +567,126 @@ components:
         message:
           type: string
           example: No quedan cupos disponibles para este evento
+
+    Review:
+      type: object
+      required:
+        - id
+        - eventId
+        - studentName
+        - studentEmail
+        - rating
+        - recommended
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          example: 1
+        eventId:
+          type: integer
+          example: 1
+        studentName:
+          type: string
+          example: Ana Pérez
+        studentEmail:
+          type: string
+          format: email
+          example: ana.perez@unmsm.edu.pe
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        recommended:
+          type: boolean
+          example: true
+        comment:
+          type: string
+          maxLength: 400
+          example: Excelente ponencia, los ejemplos en Python fueron muy claros.
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-04T15:30:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-04T15:30:00.000Z'
+
+    ReviewCreateRequest:
+      type: object
+      required:
+        - studentName
+        - studentEmail
+        - rating
+        - recommended
+      properties:
+        studentName:
+          type: string
+          minLength: 3
+          example: Ana Pérez
+        studentEmail:
+          type: string
+          format: email
+          example: ana.perez@unmsm.edu.pe
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        recommended:
+          type: boolean
+          example: true
+        comment:
+          type: string
+          maxLength: 400
+          example: Excelente ponencia, muy recomendada para estudiantes de sistemas.
+
+    ReviewUpdateRequest:
+      type: object
+      required:
+        - rating
+        - recommended
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 4
+        recommended:
+          type: boolean
+          example: true
+        comment:
+          type: string
+          maxLength: 400
+          example: Muy buena charla, aunque faltó un poco más de tiempo para preguntas.
+
+    ReviewListResponse:
+      type: object
+      required:
+        - eventId
+        - averageRating
+        - recommendationRate
+        - totalReviews
+        - reviews
+      properties:
+        eventId:
+          type: integer
+          example: 1
+        averageRating:
+          type: number
+          format: float
+          example: 4.5
+        recommendationRate:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 100
+        totalReviews:
+          type: integer
+          example: 2
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'

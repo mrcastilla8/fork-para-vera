@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { mockEvents } from '../data/mockData'
+import ReviewSection from '../components/ReviewSection'
 import { formatDate, formatTime, getDayName, isPastEvent } from '../utils/dateUtils'
 
 function EventDetail() {
@@ -92,6 +93,9 @@ function EventDetail() {
               </ol>
             </section>
           )}
+
+          {/* Valoraciones y recomendaciones */}
+          <ReviewSection eventId={event.id} isPast={past} />
 
         </article>
 
